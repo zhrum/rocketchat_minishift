@@ -20,3 +20,39 @@ Create a new project
 ```
 oc new-project rocketchat
 ```
+## Import the YAML file to project
+* Namespace : openshift
+* Database Service Name : mongodb
+* MongoDB User : admin
+* MongoDB Password : admin
+* MongoDB Database Name : rocketchat
+* MongoDB Admin Password : admin
+
+Scale rocketchat to 0 pod.
+Scale mongodb to 0 pod.
+
+## Create rocketchat's volume and attach volume to deployment
+Delete the old volume
+
+Then create volume
+* Name : rocketchatstorage
+* Access Mode : Single User (RWO) 
+* Size : 10M
+
+Attche volume
+* Mount Path : /app/uploads
+
+## Create mongodb's volume and attach volume to deployment
+Delete the old volume
+
+Then create volume
+* Name : mongodbstorage
+* Access Mode : Single User (RWO) 
+* Size : 10M
+
+Attche volume
+* Mount Path : /var/lib/mongodb/data
+
+## Finally
+Scale rocketchat to 1 pod.
+Scale mongodb to 1 pod.
