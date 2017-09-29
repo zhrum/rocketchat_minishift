@@ -32,6 +32,7 @@ oc new-project rocketchat
 * MongoDB Admin Password : admin
 
 Scale rocketchat to 0 pod.
+
 Scale mongodb to 0 pod.
 
 ## Create rocketchat's volume and attach volume to deployment
