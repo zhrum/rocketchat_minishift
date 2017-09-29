@@ -1,0 +1,175 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  name: rocket-chat
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: mongodb
+    labels:
+      template: mongodb-persistent-template
+  spec:
+    replicas: 1
+    selector:
+      name: mongodb
+    template:
+      metadata:
+        creationTimestamp: 
+        labels:
+          name: mongodb
+      spec:
+        volumes:
+        - name: mongodb-data
+          emptyDir: {}
+        containers:
+        - name: mongodb
+          image: registry.access.redhat.com/rhscl/mongodb-26-rhel7:latest
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+          env:
+          - name: MONGODB_USER
+            value: "${MONGODB_USER}"
+          - name: MONGODB_PASSWORD
+            value: "${MONGODB_PASSWORD}"
+          - name: MONGODB_DATABASE
+            value: "${MONGODB_DATABASE}"
+          - name: MONGODB_ADMIN_PASSWORD
+            value: "${MONGODB_ADMIN_PASSWORD}"
+          resources:
+            limits:
+              memory: "${MEMORY_LIMIT}"
+          volumeMounts:
+          - name: mongodb-data
+            mountPath: "/var/lib/mongodb/data"
+          livenessProbe:
+            tcpSocket:
+              port: 27017
+          readinessProbe:
+            exec:
+              command:
+              - "/bin/sh"
+              - "-i"
+              - "-c"
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+          terminationMessagePath: "/dev/termination-log"
+          imagePullPolicy: IfNotPresent
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: rocketchat
+    creationTimestamp: 
+    labels:
+      app: rocketchat
+  spec:
+    replicas: 1
+    selector:
+      app: rocketchat
+      deploymentconfig: rocketchat
+    template:
+      metadata:
+        creationTimestamp: 
+        labels:
+          app: rocketchat
+          deploymentconfig: rocketchat
+      spec:
+        volumes:
+        - name: rocketchat-volume-1
+          emptyDir: {}
+        containers:
+        - name: rocketchat
+          image: rocketchat/rocket.chat
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          env:
+          - name: MONGO_URL
+            value: mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@mongodb:27017/${MONGODB_DATABASE}
+          resources: {}
+          volumeMounts:
+          - name: rocketchat-volume-1
+            mountPath: "/app/uploads"
+          imagePullPolicy: IfNotPresent
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: rocketchat
+    labels:
+      app: rocketchat
+  spec:
+    to:
+      kind: Service
+      name: rocketchat
+    port:
+      targetPort: 3000-tcp
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: mongodb
+    creationTimestamp: 
+    labels:
+      template: mongodb-ephemeral-template
+  spec:
+    ports:
+    - name: mongo
+      protocol: TCP
+      port: 27017
+      targetPort: 27017
+    selector:
+      name: mongodb
+    type: ClusterIP
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: rocketchat
+  spec:
+    ports:
+    - name: 3000-tcp
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+    selector:
+      app: rocketchat
+      deploymentconfig: rocketchat
+    type: ClusterIP
+parameters:
+- name: MEMORY_LIMIT
+  displayName: Memory Limit
+  description: Maximum amount of memory the container can use.
+  value: 512Mi
+- name: NAMESPACE
+  displayName: Namespace
+  description: The OpenShift Namespace where the ImageStream resides.
+  value: openshift
+- name: DATABASE_SERVICE_NAME
+  displayName: Database Service Name
+  description: The name of the OpenShift Service exposed for the database.
+  value: mongodb
+  required: true
+- name: MONGODB_USER
+  displayName: MongoDB User
+  description: Username for MongoDB user that will be used for accessing the database.
+  generate: expression
+  from: user[A-Z0-9]{3}
+  required: true
+- name: MONGODB_PASSWORD
+  displayName: MongoDB Password
+  description: Password for the MongoDB user.
+  generate: expression
+  from: "[a-zA-Z0-9]{16}"
+  required: true
+- name: MONGODB_DATABASE
+  displayName: MongoDB Database Name
+  description: Name of the MongoDB database accessed.
+  value: sampledb
+  required: true
+- name: MONGODB_ADMIN_PASSWORD
+  displayName: MongoDB Admin Password
+  description: Password for the database admin user.
+  generate: expression
+  from: "[a-zA-Z0-9]{16}"
+  required: true
+
