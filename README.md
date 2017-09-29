@@ -1,4 +1,7 @@
 # Installing rocket-chat into minishift
+Here I'am telling how to intall rocketchat into minishift with persistent volumes.
+
+
 ## Create user and set policies and create project
 Log into minishift as system administrater
 ```
