@@ -18,5 +18,5 @@ oc login -u rc
 ```
 Create a new project
 ```
-oc new-project rocket-chat
+oc new-project rocketchat
 ```
