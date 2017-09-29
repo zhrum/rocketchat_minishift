@@ -164,7 +164,7 @@ parameters:
 - name: MONGODB_DATABASE
   displayName: MongoDB Database Name
   description: Name of the MongoDB database accessed.
-  value: sampledb
+  value: rocketchat
   required: true
 - name: MONGODB_ADMIN_PASSWORD
   displayName: MongoDB Admin Password
